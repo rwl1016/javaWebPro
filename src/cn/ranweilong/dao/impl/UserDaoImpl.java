@@ -6,7 +6,11 @@ import cn.ranweilong.util.JDBCUtils;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.awt.*;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class UserDaoImpl implements UserDao {
     private JdbcTemplate template = new JdbcTemplate(JDBCUtils.getDataSource());
@@ -77,16 +81,58 @@ public class UserDaoImpl implements UserDao {
     }
 
     @Override
-    public int findTotalCount() {
-        String sql = "select count(*) from user";
-
-        return template.queryForObject(sql,Integer.class);
+    public int findTotalCount(Map<String, String[]> condition) {
+//        定义模板初始化sql
+        String sql = "select count(*) from user where 1=1";
+        StringBuilder sb = new StringBuilder(sql);
+//        遍历map
+        Set<String> keyset = condition.keySet();
+        ArrayList<Object> params = new ArrayList<>();
+        for (String key: keyset) {
+//            排除分页条件参数
+            if ("currentPage".equals(key) ||"rows".equals(key)){
+                continue;
+            }
+//            获取value
+           String value =  condition.get(key)[0];
+//           判断value是否有值
+            if (value!=null && !"".equals(value) ){
+//                有值
+                sb.append(" and "+key+" like ? ");
+                params.add("%"+value+"%");
+            }
+        }
+        return template.queryForObject(sb.toString(),Integer.class,params.toArray());
     }
 
     @Override
-    public List<User> findByPage(int start, int rows) {
-        String sql = "select * from user limit ? ,?";
+    public List<User> findByPage(int start, int rows, Map<String, String[]> condition) {
+        String sql = "select * from user where 1 = 1";
+        StringBuilder sb = new StringBuilder(sql);
+//        遍历map
+        Set<String> keyset = condition.keySet();
+        ArrayList<Object> params = new ArrayList<>();
+        for (String key: keyset) {
+//            排除分页条件参数
+            if ("currentPage".equals(key) ||"rows".equals(key)){
+                continue;
+            }
+//            获取value
+            String value =  condition.get(key)[0];
+//           判断value是否有值
+            if (value!=null && !"".equals(value) ){
+//                有值
+                sb.append(" and "+key+" like ? ");
+                params.add("%"+value+"%");
+            }
+        }
 
-        return template.query(sql,new BeanPropertyRowMapper<User>(User.class),start,rows);
+//        添加分页查询
+        sb.append(" limit ?,? ");
+//        添加分页查询参数
+        params.add(start);
+        params.add(rows);
+        sql = sb.toString();
+        return template.query(sql,new BeanPropertyRowMapper<User>(User.class),params.toArray());
     }
 }
