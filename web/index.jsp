@@ -29,6 +29,7 @@
   <a
           href="${pageContext.request.contextPath}/findUserByPageServlet" style="text-decoration:none;font-size:33px">查询所有用户信息
   </a>
+  ${pageContext.request.contextPath}
 </div>
 </body>
 </html>
